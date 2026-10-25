@@ -532,8 +532,10 @@ def guardian_now():
 # fqtts 三兄弟(此前无人探)。53fa 的 cosy 不是 systemd 单元(端口探活已覆盖)。
 UNITS = {
     # 10-04: llm-api(vLLM) 停用留作回滚, 生产 LLM 换 tf-qwen36(TensorFold systemd 常驻)
-    "4c47": ["tf-qwen36", "embed-api", "embed-proxy", "rerank-api",
-             "rerank-proxy", "asr-api", "face-api",
+    # 10-25: embed/rerank 引擎 venv→docker(容器 embed/rerank, restart=unless-stopped,
+    # 无 systemd 单元, 活体由 collector 端口探 8004/8005 覆盖); 代理单元保留在此。
+    "4c47": ["tf-qwen36", "embed-proxy", "rerank-proxy",
+             "asr-api", "face-api",
              "vram-guardian"],
     # cosy-api 2026-10-25 卸载摘除(停于 10-23, TTS 收敛到 dgx2 Ming :8101)
     "53fa": ["mineru-api", "popo-api", "popo-engine", "vram-guardian",

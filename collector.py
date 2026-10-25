@@ -51,7 +51,10 @@ SERVICES = {
             8007: ("sage-api", "llm", "sage-a1.5·TF"),
         },
         # TensorFold 容器实名≠服务名: 显存按容器名认领 + 进程榜反查都要走这层别名
-        "containers": {"tf-qwen36": "tf_qwen36_35b"},
+        # 10-25: embed/rerank 引擎 venv→docker(vllm/vllm-openai:v0.32.0),
+        # 服务名沿用 embed-api/rerank-api(代理仍裸 systemd), 容器实名 embed/rerank。
+        "containers": {"tf-qwen36": "tf_qwen36_35b",
+                       "embed-api": "embed", "rerank-api": "rerank"},
     },
     "53fa": {
         "hostname": "spark-53fa",
