@@ -64,6 +64,9 @@ SERVICES = {
             8008: ("popo-api", "proxy", None),
             8010: ("popo-engine", "llm", "Popo"),
         },
+        # 8101 是 nginx 流式代理, 引擎 vllm-omni 在容器 ming-tts 内 (:8094)。
+        # 显存按容器名认领, 服务名 ming3 ≠ 容器名 ming-tts, 必须走别名。
+        "containers": {"ming3": "ming-tts"},
     },
     "dbdd": {
         "hostname": "spark-dbdd",
@@ -72,9 +75,10 @@ SERVICES = {
             8888: ("qwen38-flash", "llm", "qwen3.8-flash-next"),
         },
         # 容器名≠服务名: 显存按「容器名==服务名」认领, 不加别名则 qwen38-flash 显存恒 0。
-        # 10-05 起引擎为 TensorFold(docker 容器 qwen38-flash-next-tf, :8888);
-        # 9-25 的 vLLM 容器 vllm-fn-tp1 已退役, 别名 10-11 起跟换。
-        "containers": {"qwen38-flash": "qwen38-flash-next-tf"},
+        # 10-05 起引擎为 TensorFold; 容器名沿革 vllm-fn-tp1(9-25 vLLM) ->
+        # qwen38-flash-next-tf(10-11) -> qwen38-flash-next-zig(10-13 起, 现名)。
+        # 引擎/容器换名必须同步改这里, 否则显存恒 0(静默, 极难察觉)。
+        "containers": {"qwen38-flash": "qwen38-flash-next-zig"},
     },
 }
 # 元组第 5 位可选: 真实后端端口 (当监听端口是 proxy 时)。缺省 = 监听端口即后端。
