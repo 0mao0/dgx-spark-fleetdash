@@ -1,0 +1,3 @@
+# fleetdash 页面「关机/重启」按钮 -> sudo -n systemctl poweroff|reboot
+# 由部署脚本安装到 /etc/sudoers.d/fleetdash-power (mode 440)
+faye ALL=(ALL) NOPASSWD: /usr/bin/systemctl poweroff, /usr/bin/systemctl reboot

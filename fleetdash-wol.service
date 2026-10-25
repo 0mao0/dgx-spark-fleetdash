@@ -1,0 +1,16 @@
+[Unit]
+Description=Arm Wake-on-LAN (magic packet) on the wired uplink
+Documentation=file:///D:/AI/DGX/fleetdash/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# 开机武装 + 关机前再武装一次(驱动/NetworkManager 都可能在链路事件里把它清掉)。
+# 只设 magic packet(=g), 不改其它唤醒位。enP7s7 = 两台唯一的有线上行。
+ExecStart=/usr/sbin/ethtool -s enP7s7 wol g
+ExecStop=/usr/sbin/ethtool -s enP7s7 wol g
+
+[Install]
+WantedBy=multi-user.target

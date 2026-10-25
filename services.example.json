@@ -1,0 +1,19 @@
+{
+  "node1": {
+    "hostname": "node1",
+    "ports": {
+      "8000": ["main-llm", "llm", "qwen-32b"],
+      "8001": ["asr-api", "asr", null],
+      "8004": ["embed-api", "embed", "qwen3-embedding", 18004],
+      "8005": ["rerank-api", "rerank", "qwen3-reranker", 18005]
+    },
+    "containers": {"main-llm": "llm_container_real_name"}
+  },
+  "node2": {
+    "hostname": "node2",
+    "ports": {
+      "8007": ["mineru-api", "parse", null],
+      "8010": ["mineru-engine", "llm", "Popo"]
+    }
+  }
+}
