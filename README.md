@@ -9,14 +9,14 @@
 
 ## 架构
 
-```
-每台机器 collector.py ──30s──> 本机 sqlite ──/api/agg──┐
-                                                       ▼
-      观察者 edge (任意一台常开机器/VPS) ──拉取聚合──> 单页 HTML(60s 自刷新)
-        │ 连续 4 次拉不通判失联(缓存续渲染+横幅)
-        └─> 企业微信 webhook: 失联/恢复/停滞/服务掉线/脑死/时钟/硬件/日报图
-DGX 侧 server.py --role slave 只出 /api/agg；master/edge 才渲染页面。
-```
+![architecture](assets/architecture.png)
+
+- 数据**不出本机**：每台 collector 30s 采一次，写本机 sqlite（留 14 天），
+  `server.py --role slave` 读本机库出 `/api/agg`（快照+曲线）。
+- VPS/观察者机 edge **只拉不存**：每 30s 拉各机 `/api/agg`，内存里聚合渲染
+  单页（60s 自刷新），只缓存各机最后好帧（`edge-cache/<机>.json`），不建集中库。
+- 出口两个：浏览器（须挂反代+basic auth）、企业微信（告警+日报）。
+  拉取方向永远是 edge→机器，机器从不向外推数据。
 
 ## 快速开始
 
@@ -90,6 +90,7 @@ peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.js
 | power-sudoers / fleetdash-wol.service | 电源操作与 WoL 配套 |
 | render-test.py / report-drill.py | 日报出图演练（不发群）/ 手动推送 |
 | test_*.py | 能耗积分、渲染、请求速率三组回归 |
+| tools/make_arch.py → assets/architecture.png | 本 README 架构图的生成脚本 |
 
 ## 安全
 
