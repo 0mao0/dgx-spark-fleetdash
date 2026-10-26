@@ -23,7 +23,9 @@ header {
 header > .hosts { margin-right: auto; }
 .brand { display: flex; align-items: baseline; gap: 10px; }
 .brand h1 { font-size: 17px; font-weight: 650; letter-spacing: .3px; }
-.brand .ts { color: var(--sub); font-size: 12px; }
+/* 时间戳独立第二行: 占满整行强制换行 */
+header > .ts { flex-basis: 100%; margin-top: -3px;
+  color: var(--sub); font-size: 12px; }
 .dot { width: 8px; height: 8px; border-radius: 50%;
   background: var(--green); align-self: center; }
 .dot.bad { background: var(--red); }
