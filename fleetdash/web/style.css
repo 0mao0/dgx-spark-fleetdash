@@ -14,11 +14,13 @@ body {
 /* ---------- 标题栏 ---------- */
 header {
   position: sticky; top: 0; z-index: 10;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center;
   gap: 10px; flex-wrap: wrap;
   padding: 10px 16px; background: rgba(14,17,22,.92);
   backdrop-filter: blur(6px); border-bottom: 1px solid var(--line);
 }
+/* 主机切换紧跟 logo 成左侧组, 窗口+电源推到右端 */
+header > .hosts { margin-right: auto; }
 .brand { display: flex; align-items: baseline; gap: 10px; }
 .brand h1 { font-size: 17px; font-weight: 650; letter-spacing: .3px; }
 .brand .ts { color: var(--sub); font-size: 12px; }
@@ -111,6 +113,7 @@ main {
   main { grid-template-columns: 1fr; padding: 10px 10px 24px; }
   .row { grid-template-columns: 104px 1fr; padding: 8px 10px; }
   .stats .val { font-size: 17px; }
+  header > .hosts { margin-right: 0; }   /* 手机自然换行, 不占整行 */
 }
 @media (min-width: 901px) {
   .collapsible { display: grid; }   /* 桌面全展开 */
