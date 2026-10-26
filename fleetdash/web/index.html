@@ -22,9 +22,12 @@
     </nav>
     <nav class="hosts" id="hosts"></nav>
     <div class="pwr" id="pwr">
-      <button data-act="wake" class="pwake">唤醒</button>
-      <button data-act="reboot">重启</button>
-      <button data-act="poweroff" class="poff">关机</button>
+      <button id="pwrBtn">电源 ▾</button>
+      <div class="menu" id="pwrMenu" hidden>
+        <button data-act="wake" class="pwake">唤醒</button>
+        <button data-act="reboot">重启</button>
+        <button data-act="poweroff" class="poff">关机</button>
+      </div>
     </div>
   </div>
 </header>

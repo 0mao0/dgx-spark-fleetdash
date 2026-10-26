@@ -34,12 +34,19 @@ nav button {
 }
 nav button.on, nav button:hover { background: var(--card2); color: var(--ink); }
 nav button.on { color: var(--teal); }
-.pwr { display: flex; gap: 6px; }
+.pwr { position: relative; display: flex; gap: 6px; }
 .pwr button {
   border: 1px solid var(--line); background: var(--card); color: var(--ink);
   font-size: 12px; padding: 5px 11px; border-radius: 8px; cursor: pointer;
 }
-.pwr button:hover { border-color: var(--faint); }
+.pwr > button:hover { border-color: var(--faint); }
+.menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 20;
+  display: flex; flex-direction: column; gap: 2px; min-width: 96px;
+  background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+}
+.menu button { text-align: left; }
 .pwr .pwake { color: var(--green); }
 .pwr .poff { color: var(--red); }
 

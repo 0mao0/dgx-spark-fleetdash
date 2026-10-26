@@ -297,8 +297,21 @@ $("#sysMore").addEventListener("click", () => {
   });
   $("#sysMore").textContent = sysExpanded ? "收起 ▴" : "展开其余参数 ▾";
 });
-$("#pwr").addEventListener("click", async (e) => {
+// 电源下拉: 先点开菜单再选项, 加上原有 confirm+token, 三道防误点
+function pwrMenu(open) {
+  $("#pwrMenu").hidden = !open;
+  $("#pwrBtn").classList.toggle("on", open);
+}
+$("#pwrBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  pwrMenu($("#pwrMenu").hidden);
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#pwr")) pwrMenu(false);
+});
+$("#pwrMenu").addEventListener("click", async (e) => {
   const b = e.target.closest("button"); if (!b) return;
+  pwrMenu(false);
   if (!lastData) return;
   const host = pickHost(lastData);
   if (!host) return;
