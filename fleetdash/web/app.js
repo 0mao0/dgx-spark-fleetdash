@@ -219,7 +219,7 @@ function renderHostTabs(data) {
     const b = document.createElement("button");
     const bad = h.down || h.error;
     b.textContent = (bad ? "✕ " : "") + (h.label || h.host);
-    if ((h.host === selHost || h.label === selHost) && h === pickHost(data)) b.classList.add("on");
+    if (h === pickHost(data)) b.classList.add("on");  // 跟实际展示的机走，无参加载也有高亮
     b.style.color = bad && !b.classList.contains("on") ? "var(--red)" : "";
     b.onclick = () => { selHost = h.host; render(data); };
     box.appendChild(b);

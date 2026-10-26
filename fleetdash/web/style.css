@@ -38,6 +38,9 @@ nav button {
 }
 nav button.on, nav button:hover { background: var(--card2); color: var(--ink); }
 nav button.on { color: var(--teal); }
+/* 选中主机页签: 文字+淡青底+描边，一眼锁定当前机 */
+#hosts button.on { color: var(--teal); background: rgba(47,179,167,.16);
+  box-shadow: inset 0 0 0 1px rgba(47,179,167,.55); }
 /* 下拉菜单(窗口/电源共用): 挂在 position:relative 的容器里 */
 .menu {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 20;
