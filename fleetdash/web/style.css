@@ -45,6 +45,8 @@ nav button.on { color: var(--teal); }
   background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
   padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.45);
 }
+/* display:flex 会盖掉 UA 的 [hidden]{display:none}，必须显式补回 */
+.menu[hidden] { display: none; }
 .menu button { text-align: left; }
 .wins { position: relative; }
 .wins > #winsBtn { color: var(--teal); }
