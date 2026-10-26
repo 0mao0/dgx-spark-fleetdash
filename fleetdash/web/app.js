@@ -98,13 +98,45 @@ function peak(pts) {
   if (!pts || !pts.length) return null;
   return Math.max(...pts.map((p) => p[1]));
 }
-function rowEl(nameHtml, val, sub, pts, color) {
+function pad2(n) { return String(n).padStart(2, "0"); }
+function fmtAxisTs(ts) {
+  const d = new Date(ts * 1000);
+  return `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+function fmtTipTs(ts, withDate) {
+  const d = new Date(ts * 1000);
+  const hm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  return withDate ? `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${hm}` : hm;
+}
+// 每行曲线的值格式化（与左列单位一致），tooltip 用
+const SYS_FMT = {
+  mem: (v) => fmtNum(v, 1) + " G",
+  temp: (v) => fmtNum(v, 0) + " ℃",
+  mhz: (v) => fmtNum(v, 0) + " MHz",
+  pw: (v) => fmtNum(v, 0) + " W",
+  util: (v) => fmtNum(v, 0) + " %",
+  disk: (v) => fmtNum(v, 0) + " G",
+  tok: (v) => fmtTok(v) + " tok",
+};
+const PTS_FMT = {
+  "生成 tok/s": (v) => fmtNum(v, 1) + " tok/s",
+  "并发": (v) => fmtNum(v, 1),
+  "TTFT": (v) => fmtNum(v / 1000, 2) + " s",
+  "请求/s": (v) => fmtNum(v, 2) + " /s",
+};
+function rowEl(nameHtml, val, sub, pts, color, fmt) {
   const el = document.createElement("div");
   el.className = "row";
+  const axis = pts && pts.length >= 2
+    ? `<span class="axis">${fmtAxisTs(pts[0][0])} →</span>` : "";
   el.innerHTML =
     `<div class="stats"><span class="name">${nameHtml}</span>` +
     `<span class="val">${val}</span><span class="sub">${sub || ""}</span></div>` +
-    `<div class="chart">${sparkline(pts, color)}</div>`;
+    `<div class="chart">${axis}${sparkline(pts, color)}</div>`;
+  if (pts && pts.length >= 2) {
+    const svg = el.querySelector("svg");
+    if (svg) svg._fd = { pts, fmt: fmt || ((v) => fmtNum(v, 1)) };
+  }
   return el;
 }
 
@@ -160,7 +192,7 @@ function sysRow(cfgItem, snap, ser) {
       ? `今日 · 保留期合计 ${fmtTok(snap.hist_tok)}`
       : "今日（曲线 = 每采样周期新增）";
   }
-  const el = rowEl(name, val, sub, pts, cfgItem.color);
+  const el = rowEl(name, val, sub, pts, cfgItem.color, SYS_FMT[k]);
   if (!SYS_ROWS.slice(0, 3).some((r) => r.key === k)) {
     el.classList.add("collapsible");        // 手机默认隐藏; 桌面 CSS 强制显示
     el.classList.toggle("open", sysExpanded);
@@ -199,7 +231,7 @@ function svcRow(m, ser) {
     ptsLabel = g("act_rate").length ? "请求/s" : "并发";
   }
   const el = rowEl(nameHtml + (ptsLabel ? `<span class="badge">${ptsLabel}</span>` : ""),
-                   val, sub, pts, dead ? "#e5484d" : color);
+                   val, sub, pts, dead ? "#e5484d" : color, PTS_FMT[ptsLabel]);
   if (dead) el.classList.add("dead");
   return el;
 }
@@ -357,6 +389,33 @@ $("#pwrMenu").addEventListener("click", async (e) => {
   } catch (err) {
     toast("请求失败：" + err.message);
   }
+});
+
+/* 曲线悬停提示：时间 + 数值（svg 存 _fd，30s 重绘自动换新数据） */
+const tip = document.createElement("div");
+tip.id = "tip"; tip.hidden = true;
+document.body.appendChild(tip);
+document.addEventListener("mousemove", (e) => {
+  const svg = e.target.closest ? e.target.closest(".chart svg") : null;
+  const fd = svg && svg._fd;
+  if (!fd) { tip.hidden = true; return; }
+  const r = svg.getBoundingClientRect();
+  if (e.clientX < r.left || e.clientX > r.right) { tip.hidden = true; return; }
+  const PADR = 4 / 300;                        // 与 sparkline 的 PAD/W 对齐
+  let f = (e.clientX - r.left) / r.width;
+  f = Math.min(1, Math.max(0, (f - PADR) / (1 - 2 * PADR)));
+  const n = fd.pts.length;
+  const t0 = fd.pts[0][0], t1 = fd.pts[n - 1][0];
+  const tHit = t0 + f * (t1 - t0);             // 按时间轴取最近点(采样非等距时更准)
+  let lo = 0, hi = n - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1;
+    if (fd.pts[mid][0] < tHit) lo = mid; else hi = mid; }
+  const [t, v] = (tHit - fd.pts[lo][0] <= fd.pts[hi][0] - tHit) ? fd.pts[lo] : fd.pts[hi];
+  tip.textContent = `${fmtTipTs(t, t1 - t0 > 14400)} · ${fd.fmt(v)}`;
+  tip.hidden = false;
+  const flip = e.clientX + 160 > innerWidth;
+  tip.style.left = (flip ? e.clientX - 150 : e.clientX + 12) + "px";
+  tip.style.top = Math.min(e.clientY + 16, innerHeight - 34) + "px";
 });
 
 /* 初始窗口按钮同步 + 启动 */
