@@ -286,9 +286,12 @@ function toast(msg) {
 /* ---------- 交互 ---------- */
 // 下拉开合(窗口/电源共用一套: 各自按钮 toggle, 点别处全关)
 function menuToggle(btnId, menuId) {
-  const m = $(menuId);
-  m.hidden = !m.hidden;
-  $(btnId).classList.toggle("on", !m.hidden);
+  const wasOpen = !$(menuId).hidden;
+  menusClose();               // 两个下拉互斥: 同一时刻最多开一个
+  if (!wasOpen) {
+    $(menuId).hidden = false;
+    $(btnId).classList.add("on");
+  }
 }
 function menusClose() {
   for (const [b, m] of [["#winsBtn", "#winsMenu"], ["#pwrBtn", "#pwrMenu"]]) {
@@ -321,7 +324,7 @@ function pwrMenu(open) {
 }
 $("#pwrBtn").addEventListener("click", (e) => {
   e.stopPropagation();
-  pwrMenu($("#pwrMenu").hidden);
+  menuToggle("#pwrBtn", "#pwrMenu");
 });
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#pwr") && !e.target.closest("#wins")) menusClose();
