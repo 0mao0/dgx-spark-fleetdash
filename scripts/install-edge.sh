@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # fleetdash edge 部署 — 在腾讯云 VPS(124.221.238.70) 上以 root 运行
-#   bash install-edge.sh [server.py 路径]      # 默认 ./server.py
-# 幂等: 重拷 server.py 后重跑即完成升级(覆盖文件 + restart)。
+#   bash scripts/install-edge.sh [server.py] [fleetdash 包目录]
+#   例(仓库根): bash scripts/install-edge.sh ./server.py ./fleetdash
+# 幂等: 重拷 server.py + fleetdash/ 包后重跑即完成升级(覆盖文件 + restart)。
 #
 # edge 是观察者角色(见 server.py 头注释): 拉三台 DGX 的 /api/agg、渲染页面、
 # 失联缓存、企业微信车队级告警、日报。DGX 侧零改动。
 set -euo pipefail
 
 SRC="${1:-./server.py}"
+PKG="${2:-./fleetdash}"
 DIR=/opt/fleetdash
 WEBHOOK_FILE=/etc/fleetdash/webhook
 PEER_4C47="${PEER_4C47:-http://100.125.117.85:9100}"
@@ -20,6 +22,7 @@ PYTHON="${PYTHON:-python3}"
 PYBIN="$(command -v "$PYTHON" || true)"
 
 [ -f "$SRC" ] || { echo "[!] 找不到 $SRC" >&2; exit 1; }
+[ -d "$PKG" ] || { echo "[!] 找不到包目录 $PKG (fleetdash/ 包, 含 web/ 前端)" >&2; exit 1; }
 
 # 前置: 每台 peer 的 9100 必须从 VPS 经 tailnet 可达(装之前先探, 避免瞎装)
 for pair in "4c47:$PEER_4C47" "53fa:$PEER_53FA" "dbdd:$PEER_DBDD"; do
@@ -39,8 +42,17 @@ PYBIN="$(command -v "$PYTHON" || true)"
   echo "[!] $PYBIN 需 >= 3.8。用 PYTHON=python3.11 指定(VPS 已装 dnf 的 python3.11)" >&2; exit 1; }
 
 mkdir -p "$DIR" /etc/fleetdash
+# 覆盖前备份旧代码(不碰 fleet.db/edge-cache): 出问题可回滚
+if [ -f "$DIR/server.py" ]; then
+  BK="$DIR/code-bak-$(date +%Y%m%d-%H%M%S).tar"
+  tar -cf "$BK" -C "$DIR" --ignore-failed-read \
+      server.py fleetdash 2>/dev/null && echo "[ok] 旧代码已备份: $BK"
+fi
 cp "$SRC" "$DIR/server.py"
 chmod 644 "$DIR/server.py"
+rm -rf "$DIR/fleetdash"
+cp -r "$PKG" "$DIR/fleetdash"
+find "$DIR/fleetdash" -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
 
 if [ ! -s "$WEBHOOK_FILE" ]; then
   echo "[!] $WEBHOOK_FILE 不存在: edge 会正常运行但告警只写日志不推送。启用推送:"

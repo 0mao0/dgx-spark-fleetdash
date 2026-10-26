@@ -1,8 +1,12 @@
-# 干渲染测试: 不发企微, 只出 PNG 供人工检视。用法: python3.11 render-test.py
-import sys, importlib.util
-spec = importlib.util.spec_from_file_location("srv", "/opt/fleetdash/server.py")
-srv = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(srv)
+# 干渲染测试: 不发企微, 只出 PNG 供人工检视。
+# 用法: python3.11 tests/render-test.py  (输出 /tmp, 可用 REPORT_TEST_OUT 覆盖)
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from fleetdash import report as srv
+
+OUT = os.environ.get("REPORT_TEST_OUT", "/tmp")
 
 machines = [
     {"name": "4c47", "ok": True,
@@ -68,5 +72,6 @@ for m in machines[:2]:
 for i, m in enumerate(machines):
     png = srv.render_report_png("2026-09-15 09:00", m,
                                 "2026-09-15 09:00:07")
-    open(f"/tmp/report-test-{i}.png", "wb").write(png)
-    print(f"OK card={len(png)} -> /tmp/report-test-{i}.png")
+    out = os.path.join(OUT, f"report-test-{i}.png")
+    open(out, "wb").write(png)
+    print(f"OK card={len(png)} -> {out}")

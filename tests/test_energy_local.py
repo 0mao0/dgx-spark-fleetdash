@@ -1,12 +1,16 @@
 # 周期累计量仿真: PeriodAccum 积分数学 / MAX_DT 空洞剔除 / 翻篇归档 /
-# 重启续算(meta 持久化), 功耗卡(有数/NULL)、token 卡与并发 chip 渲染。
+# 重启续算(meta 持久化); 功耗与 token 经 agg()/page_payload() 的透传降级。
 import os
 import sqlite3
+import sys
 import tempfile
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import collector as C
-import server as S
+from fleetdash import config as cfg
+from fleetdash.data import agg
+from fleetdash.webapp import page_payload
 
 db = os.path.join(tempfile.mkdtemp(), "fleet.db").replace("\\", "/")
 con = C.ensure_db(db)
@@ -66,13 +70,14 @@ assert abs(float(got2["day_v"]) - 1500.0) < 1e-6 and got2["day"] == \
 me3 = C.PeriodAccum(con, "month", "%Y-%m", now)
 assert me3.period == e.period and me3.val == 0.0
 
-# --- 6) 页面渲染: 两卡有数 + 老数据 NULL + 并发 chip
-S.DB = db
+# --- 6) 数据透传: 功耗/token 卡有数 + 老 collector 形态 NULL 降级
+cfg.DB = db
+cfg.ROLE = "master"
+cfg.PEERS = {}
 os.environ["FLEETDASH_HOST"] = "4c47"
-os.environ["FLEETDASH_LABEL"] = "4c47"
 now = int(time.time())
 
-def render_page_with(month_wh, day_tok, tps, req_run):
+def payload_with(month_wh, day_tok, tps, req_run):
     con.execute("INSERT OR REPLACE INTO sample (ts,gpu_temp,gpu_util,gpu_pw,"
                 "cpu_temp,cpu_max,mem_used,mem_total,load1,month_wh,day_tok) "
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -82,20 +87,24 @@ def render_page_with(month_wh, day_tok, tps, req_run):
                 "req_wait,kv_use) VALUES (?,?,?,?,?,?,?,?,?,?)",
                 (now, "llm-api", "llm", "qwen3.6-35b", 51435, 1, tps, req_run, 0, 0.1))
     con.commit()
-    a = S.agg(3600)
-    h = dict(a); h["label"] = "4c47"
-    host_html = S.render_host(h, "3h", True)
-    page = S.render_page([h], "3h", 0)
-    return host_html, page
+    return agg(3600), page_payload("3h")
 
-host, page = render_page_with(3200.0, 1234567, 137.4, 3)
-# 断言跟页面现版卡片对齐: 大字=聚合速率 "137 tok/s", 副行="今日 1.2M tok"
-assert "137" in host and "tok/s" in host
-assert "今日 1.2M tok" in host
-assert "本月 3.2 kWh ≈ ¥1.9" in host
-assert "并发 3 路" in page and "class=\"chip\"" in page
-# 老 collector 形态: NULL 列与无 tps 降级
-host, page = render_page_with(None, None, None, None)
-assert "待采集器更新" in host and "— tok/s" not in host  # 速率显示 0
-assert "并发 0 路" in page
+a, pp = payload_with(3200.0, 1234567, 137.4, 3)
+snap = a["snapshot"]
+assert snap["month_wh"] == 3200.0 and snap["day_tok"] == 1234567
+m = pp["hosts"][0]["snapshot"]["models"][0]
+assert m["svc"] == "llm-api" and m["tps"] == 137.4 and m["req_run"] == 3
+# 功耗卡副行文案(页面用 month_wh 换算)
+from fleetdash.data import month_cost_txt, tok_txt
+assert month_cost_txt(3200.0) == "本月 3.2 kWh ≈ ¥1.9", month_cost_txt(3200.0)
+assert tok_txt(1234567) == "1.2M"
+
+# 老 collector 形态: NULL 列整链路降级
+a2, pp2 = payload_with(None, None, None, None)
+s2 = a2["snapshot"]
+assert s2["month_wh"] is None and s2["day_tok"] is None and s2["hist_tok"] is None
+assert a2["series"]["heat"]["tok"] == []
+m2 = pp2["hosts"][0]["snapshot"]["models"][0]
+assert m2["tps"] is None and m2["req_run"] is None
+assert month_cost_txt(None) == "本月 —（待采集器更新）"
 print("PERIOD_SIM_OK")

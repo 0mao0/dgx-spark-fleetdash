@@ -20,8 +20,18 @@ dgx)
   [ $# -ge 2 ] || { echo "usage: $0 dgx <host_key> <master|slave> [peers]" >&2; exit 1; }
   DIR="$HOME/fleetdash"
   mkdir -p "$DIR"
-  cp "$HERE/collector.py" "$HERE/server.py" "$HERE/install.sh" "$DIR/"
-  cp "$HERE/fleetdash-wol.service" "$HERE/power-sudoers" "$DIR/"
+  # 覆盖前备份旧代码(不碰 fleet.db): 出问题可回滚 server.py + collector.py + 包
+  if [ -f "$DIR/server.py" ]; then
+    BK="$DIR/code-bak-$(date +%Y%m%d-%H%M%S).tar"
+    tar -cf "$BK" -C "$DIR" --ignore-failed-read \
+        server.py collector.py fleetdash 2>/dev/null \
+      && echo "[ok] 旧代码已备份: $BK"
+  fi
+  cp "$HERE/collector.py" "$HERE/server.py" "$DIR/"
+  rm -rf "$DIR/fleetdash"
+  cp -r "$HERE/fleetdash" "$DIR/"
+  cp "$HERE/scripts/install.sh" "$DIR/"
+  cp "$HERE/scripts/fleetdash-wol.service" "$HERE/scripts/power-sudoers" "$DIR/"
   [ -f "$HERE/services.example.json" ] && cp "$HERE/services.example.json" "$DIR/"
   if [ ! -s "$DIR/power.token" ]; then
     if command -v openssl >/dev/null; then
@@ -38,7 +48,7 @@ dgx)
 edge)
   shift || true
   PYTHON="${PYTHON:-python3}"
-  bash "$HERE/install-edge.sh" "$HERE/server.py"
+  bash "$HERE/scripts/install-edge.sh" "$HERE/server.py" "$HERE/fleetdash"
   ;;
 *)
   sed -n '2,5p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'

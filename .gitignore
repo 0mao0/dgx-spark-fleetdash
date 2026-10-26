@@ -10,3 +10,4 @@ __pycache__/
 edge-cache/
 push-state.json
 .DS_Store
+scratch/

@@ -1,0 +1,110 @@
+:root {
+  --bg: #0e1116; --card: #161b23; --card2: #1b2129; --line: #242c37;
+  --ink: #d7dee8; --sub: #7b8794; --faint: #55606d;
+  --teal: #2fb3a7; --amber: #e8a33d; --red: #e5484d; --green: #3db36e;
+  --blue: #4c8dff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 14px/1.45 system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* ---------- 标题栏 ---------- */
+header {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+  padding: 10px 16px; background: rgba(14,17,22,.92);
+  backdrop-filter: blur(6px); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 { font-size: 17px; font-weight: 650; letter-spacing: .3px; }
+.brand .ts { color: var(--sub); font-size: 12px; }
+.dot { width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green); align-self: center; }
+.dot.bad { background: var(--red); }
+.ctrls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+nav { display: flex; gap: 2px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
+nav button {
+  border: 0; background: none; color: var(--sub); cursor: pointer;
+  font-size: 12px; padding: 4px 9px; border-radius: 6px;
+}
+nav button.on, nav button:hover { background: var(--card2); color: var(--ink); }
+nav button.on { color: var(--teal); }
+.pwr { display: flex; gap: 6px; }
+.pwr button {
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  font-size: 12px; padding: 5px 11px; border-radius: 8px; cursor: pointer;
+}
+.pwr button:hover { border-color: var(--faint); }
+.pwr .pwake { color: var(--green); }
+.pwr .poff { color: var(--red); }
+
+/* ---------- 双栏 ---------- */
+main {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  padding: 14px 16px 28px; max-width: 1500px; margin: 0 auto;
+}
+.col h2 {
+  font-size: 12px; font-weight: 600; color: var(--sub);
+  text-transform: uppercase; letter-spacing: 1px; margin: 2px 2px 8px;
+}
+.row {
+  display: grid; grid-template-columns: 118px 1fr; gap: 10px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+  align-items: center; min-height: 56px;
+}
+.stats { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stats .name { font-size: 12px; color: var(--sub); }
+.stats .val { font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums;
+  white-space: nowrap; }
+.stats .sub { font-size: 11px; color: var(--faint); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.chart { width: 100%; height: 46px; display: block; }
+.chart svg { display: block; width: 100%; height: 100%; }
+
+/* 服务行：名称带 kind 点 */
+.kind { display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-right: 5px; vertical-align: 1px; }
+.badge { font-size: 10px; color: var(--faint); border: 1px solid var(--line);
+  border-radius: 4px; padding: 0 4px; margin-left: 5px; }
+.row.dead { opacity: .55; }
+.row.dead .val { color: var(--red); }
+
+/* 折叠：手机默认展开 A 栏前三项 */
+.more {
+  width: 100%; border: 1px dashed var(--line); background: none;
+  color: var(--sub); font-size: 12px; padding: 7px; border-radius: 8px;
+  cursor: pointer; margin-bottom: 8px;
+}
+.more:hover { color: var(--ink); }
+.collapsible { display: none; }
+.collapsible.open { display: grid; }
+
+/* ---------- 提示 ---------- */
+.banner {
+  position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 20;
+  background: #2a1618; border: 1px solid var(--red); color: #f2b8bb;
+  border-radius: 10px; padding: 10px 14px; font-size: 13px;
+}
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  z-index: 30; background: var(--card2); border: 1px solid var(--line);
+  color: var(--ink); border-radius: 10px; padding: 9px 16px; font-size: 13px;
+  max-width: 88vw;
+}
+
+/* ---------- 手机：上 A 下 B ---------- */
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; padding: 10px 10px 24px; }
+  .row { grid-template-columns: 104px 1fr; padding: 8px 10px; }
+  .stats .val { font-size: 17px; }
+}
+@media (min-width: 901px) {
+  .collapsible { display: grid; }   /* 桌面全展开 */
+  .more { display: none; }
+}

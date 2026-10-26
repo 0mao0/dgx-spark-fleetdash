@@ -12,11 +12,24 @@
 ![architecture](assets/architecture.png)
 
 - 数据**不出本机**：每台 collector 30s 采一次，写本机 sqlite（留 14 天），
-  `server.py --role slave` 读本机库出 `/api/agg`（快照+曲线）。
-- VPS/观察者机 edge **只拉不存**：每 30s 拉各机 `/api/agg`，内存里聚合渲染
-  单页（60s 自刷新），只缓存各机最后好帧（`edge-cache/<机>.json`），不建集中库。
+  `server.py --role slave` 读本机库出 `/api/agg`（快照+曲线，全量口径）。
+- VPS/观察者机 edge **只拉不存**：每 30s 拉各机 `/api/agg`，内存里聚合；
+  页面数据走 slim 的 `/api/page`，30s 自刷新，只缓存各机最后好帧
+  （`edge-cache/<机>.json`），不建集中库。
 - 出口两个：浏览器（须挂反代+basic auth）、企业微信（告警+日报）。
   拉取方向永远是 edge→机器，机器从不向外推数据。
+
+## 页面
+
+单页双栏，手机自动变上下堆叠：
+
+- **A 栏 系统参数**：内存、温度、频率、功耗、利用率、磁盘、总生成 token，
+  一行一项，左统计数字右 30s 采样曲线；手机端默认展开前三项，其余折叠。
+- **B 栏 服务参数**：每个注册服务一行。llm = 实时 tok/s + 并发（曲线 tok/s），
+  tts = TTFT + 并发（引擎无 /metrics 时 TTFT 显 "—"，曲线退化为并发），
+  其余类别 = 并发 + 请求速率。
+- 顶栏：窗口切换（3h/1d/3d/7d）、主机切换（支持 `?hn=<机>` 深链）、
+  唤醒/重启/关机三个电源按钮。
 
 ## 快速开始
 
@@ -38,7 +51,7 @@ git clone https://github.com/0mao0/dgx-spark-fleetdash.git && cd dgx-spark-fleet
 ### 2. 观察者 edge（一台即可，建议公网可达的 VPS）
 
 ```bash
-./deploy.sh edge            # 或 PYTHON=python3.11 bash install-edge.sh ./server.py
+./deploy.sh edge            # 或 PYTHON=python3.11 bash scripts/install-edge.sh ./server.py ./fleetdash
 ```
 
 peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.json`
@@ -48,8 +61,9 @@ peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.js
 ### 3. 电源操作与远程唤醒（可选）
 
 页面「关机/重启/唤醒」按钮走 token 门控 + 企微留痕（聊天记录即操作台账）。
-被监控机需 `power-sudoers` 进 `/etc/sudoers.d/`、token 放 `~/fleetdash/power.token`
-(600)、`fleetdash-wol.service` 开机重装 WoL（magic packet 由同网段在线 peer 代发）。
+被监控机需 `scripts/power-sudoers` 进 `/etc/sudoers.d/`、token 放
+`~/fleetdash/power.token`(600)、`scripts/fleetdash-wol.service` 开机重装 WoL
+（magic packet 由同网段在线 peer 代发）。
 
 ## 服务分类与字段规范（统计口径）
 
@@ -80,16 +94,18 @@ peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.js
 
 | 文件 | 作用 |
 |---|---|
-| collector.py | 采集器：sqlite 单写者，30s 对齐时间槽 |
-| server.py | 渲染+聚合+告警状态机（role = master/slave/edge） |
+| collector.py | 采集器：sqlite 单写者，30s 对齐时间槽（独立 stdlib 脚本，不参与包） |
+| server.py | 瘦入口：`from fleetdash.main import main`（systemd 路径不变） |
+| fleetdash/ | 实现包：config/db/data/alerts/poller/report/webapp/main |
+| fleetdash/web/ | 前端：index.html + style.css + app.js（手写 SVG 曲线，零依赖无 CDN） |
 | deploy.sh | 一键部署入口（dgx 子命令 / edge 子命令） |
-| install.sh | DGX 侧 systemd user 服务安装（deploy.sh 内部调用） |
-| install-edge.sh | VPS/观察者侧 root 系统服务安装（幂等可重跑升级） |
+| scripts/install.sh | DGX 侧 systemd user 服务安装（deploy.sh 内部调用） |
+| scripts/install-edge.sh | VPS/观察者侧 root 系统服务安装（幂等可重跑升级） |
+| scripts/power-sudoers / scripts/fleetdash-wol.service | 电源操作与 WoL 配套 |
 | services.example.json | 服务表外部配置样例 |
 | peers.example.json | edge 热加载 peers 样例 |
-| power-sudoers / fleetdash-wol.service | 电源操作与 WoL 配套 |
-| render-test.py / report-drill.py | 日报出图演练（不发群）/ 手动推送 |
-| test_*.py | 能耗积分、渲染、请求速率三组回归 |
+| tests/render-test.py / tests/report-drill.py | 日报出图演练（不发群）/ 手动推送 |
+| tests/test_*.py | 能耗积分、数据契约、请求速率三组回归 |
 | tools/make_arch.py → assets/architecture.png | 本 README 架构图的生成脚本 |
 
 ## 安全

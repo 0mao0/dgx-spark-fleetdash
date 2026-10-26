@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fleetdash · DGX 车队面板</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="dot" id="liveDot"></span>
+    <h1>fleetdash</h1>
+    <span class="ts" id="tsInfo">—</span>
+  </div>
+  <div class="ctrls">
+    <nav class="wins" id="wins">
+      <button data-w="3h">3h</button>
+      <button data-w="1d">1d</button>
+      <button data-w="3d" class="on">3d</button>
+      <button data-w="7d">7d</button>
+    </nav>
+    <nav class="hosts" id="hosts"></nav>
+    <div class="pwr" id="pwr">
+      <button data-act="wake" class="pwake">唤醒</button>
+      <button data-act="reboot">重启</button>
+      <button data-act="poweroff" class="poff">关机</button>
+    </div>
+  </div>
+</header>
+<main>
+  <section class="col" id="colSys">
+    <h2>系统参数</h2>
+    <div id="sysRows"></div>
+    <button class="more" id="sysMore" hidden>展开其余参数 ▾</button>
+  </section>
+  <section class="col" id="colSvc">
+    <h2>服务参数</h2>
+    <div id="svcRows"></div>
+  </section>
+</main>
+<div class="banner" id="banner" hidden></div>
+<div class="toast" id="toast" hidden></div>
+<script src="/app.js"></script>
+</body>
+</html>

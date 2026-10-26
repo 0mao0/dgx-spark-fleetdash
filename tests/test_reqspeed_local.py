@@ -1,7 +1,10 @@
 # 本地仿真: 用 4c47 真实抓取的 /metrics 文本验证 collector 新增解析与 _ratio 数学。
-# 不入 systemd, 一次性跑: python test_reqspeed_local.py
+# 不入 systemd, 一次性跑: python tests/test_reqspeed_local.py
 import os
 import re
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import collector as C
 
 PATH = os.environ.get("METRICS_PATH", "/tmp/vllm_metrics.txt")
