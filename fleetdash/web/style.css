@@ -67,11 +67,12 @@ main {
 .chart { width: 100%; height: 46px; display: block; }
 .chart svg { display: block; width: 100%; height: 100%; }
 
-/* 服务行：名称带 kind 点 */
+/* 服务行：名称带 kind 点; 徽章整块换行, 不撕单词 */
+.stats .name { display: flex; flex-wrap: wrap; gap: 2px 4px; align-items: baseline; }
 .kind { display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-  margin-right: 5px; vertical-align: 1px; }
+  flex: none; }
 .badge { font-size: 10px; color: var(--faint); border: 1px solid var(--line);
-  border-radius: 4px; padding: 0 4px; margin-left: 5px; }
+  border-radius: 4px; padding: 0 4px; white-space: nowrap; }
 .row.dead { opacity: .55; }
 .row.dead .val { color: var(--red); }
 
