@@ -15,8 +15,8 @@ const KIND_ZH = {
 };
 
 const params = new URLSearchParams(location.search);
-let win = params.get("w") || "3d";
-if (!["3h", "1d", "3d", "7d"].includes(win)) win = "3d";
+let win = params.get("w") || "3h";
+if (!["3h", "1d", "3d", "7d"].includes(win)) win = "3h";
 let selHost = params.get("hn") || "";   // 告警深链 ?hn=4c47
 let lastData = null;
 let sysExpanded = false;
@@ -284,10 +284,27 @@ function toast(msg) {
 }
 
 /* ---------- 交互 ---------- */
-$("#wins").addEventListener("click", (e) => {
+// 下拉开合(窗口/电源共用一套: 各自按钮 toggle, 点别处全关)
+function menuToggle(btnId, menuId) {
+  const m = $(menuId);
+  m.hidden = !m.hidden;
+  $(btnId).classList.toggle("on", !m.hidden);
+}
+function menusClose() {
+  for (const [b, m] of [["#winsBtn", "#winsMenu"], ["#pwrBtn", "#pwrMenu"]]) {
+    $(m).hidden = true;
+    $(b).classList.remove("on");
+  }
+}
+$("#winsBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  menuToggle("#winsBtn", "#winsMenu");
+});
+$("#winsMenu").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   win = b.dataset.w;
-  document.querySelectorAll("#wins button").forEach((x) => x.classList.toggle("on", x === b));
+  $("#winsBtn").textContent = win + " ▾";
+  menusClose();
   load();
 });
 $("#sysMore").addEventListener("click", () => {
@@ -307,7 +324,7 @@ $("#pwrBtn").addEventListener("click", (e) => {
   pwrMenu($("#pwrMenu").hidden);
 });
 document.addEventListener("click", (e) => {
-  if (!e.target.closest("#pwr")) pwrMenu(false);
+  if (!e.target.closest("#pwr") && !e.target.closest("#wins")) menusClose();
 });
 $("#pwrMenu").addEventListener("click", async (e) => {
   const b = e.target.closest("button"); if (!b) return;
@@ -340,7 +357,6 @@ $("#pwrMenu").addEventListener("click", async (e) => {
 });
 
 /* 初始窗口按钮同步 + 启动 */
-document.querySelectorAll("#wins button").forEach((x) =>
-  x.classList.toggle("on", x.dataset.w === win));
+$("#winsBtn").textContent = win + " ▾";
 load();
 setInterval(load, REFRESH_MS);

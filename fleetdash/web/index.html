@@ -16,10 +16,13 @@
   <nav class="hosts" id="hosts"></nav>
   <div class="ctrls">
     <nav class="wins" id="wins">
-      <button data-w="3h">3h</button>
-      <button data-w="1d">1d</button>
-      <button data-w="3d" class="on">3d</button>
-      <button data-w="7d">7d</button>
+      <button id="winsBtn">3h ▾</button>
+      <div class="menu" id="winsMenu" hidden>
+        <button data-w="3h">3h</button>
+        <button data-w="1d">1d</button>
+        <button data-w="3d">3d</button>
+        <button data-w="7d">7d</button>
+      </div>
     </nav>
     <div class="pwr" id="pwr">
       <button id="pwrBtn">电源 ▾</button>
