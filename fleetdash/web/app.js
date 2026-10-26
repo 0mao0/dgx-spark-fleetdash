@@ -266,7 +266,7 @@ function render(data) {
 /* ---------- 数据获取 ---------- */
 async function load() {
   try {
-    const r = await fetch(`/api/page?w=${win}`, { cache: "no-store" });
+    const r = await fetch(`api/page?w=${win}`, { cache: "no-store" });
     if (!r.ok) throw new Error("HTTP " + r.status);
     render(await r.json());
   } catch (e) {
@@ -343,7 +343,7 @@ $("#pwrMenu").addEventListener("click", async (e) => {
   tok = prompt("电源操作 token：", tok) || "";
   if (!tok) return;
   try {
-    const r = await fetch("/api/power", {
+    const r = await fetch("api/power", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: act, token: tok, host: host.host, target: host.host }),
     });
