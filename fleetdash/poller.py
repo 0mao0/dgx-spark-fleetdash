@@ -168,7 +168,7 @@ def poller_loop():
         except Exception as e:
             print(f"[edge] poller error: {e}", file=sys.stderr, flush=True)
         try:
-            maybe_daily_report()
+            report.maybe_daily_report()
         except Exception as e:
             print(f"[edge] report error: {e}", file=sys.stderr, flush=True)
         time.sleep(cfg.POLL_SEC)

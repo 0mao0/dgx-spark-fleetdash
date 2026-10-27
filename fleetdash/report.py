@@ -3,11 +3,24 @@ import json
 import os
 import sys
 import time
+import urllib.error
+import urllib.request
 
 from . import config as cfg
 from . import alerts
-from .alerts import push_wecom, _fmt_age, _fmt_uptime
+from .alerts import (push_wecom, _fmt_age, _fmt_uptime,
+                     CLOCK_DRIFT_MS, TPS_DROP_TH)
 from .data import wd_alert_name
+
+# 拆包回归修复(2026-10-27): 以下名字原属单文件 server.py 的模块级全局,
+# 拆包时漏搬/漏 import, 导致 edge 日报链路 NameError(09:00 日报静默失踪)。
+_fonts_cache = {}
+
+
+def fmt(v, d=1, dash="—"):
+    return dash if v is None else f"{v:.{d}f}"
+
+
 def _kfmt(n):
     return f"{n / 1000:.1f}k" if n >= 1000 else str(int(n))
 

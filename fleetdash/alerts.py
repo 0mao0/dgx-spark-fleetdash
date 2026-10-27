@@ -1,11 +1,14 @@
 """告警：企微推送、闩锁状态机、各类 check（仅在 edge 轮询成功后调用）。"""
 import json
 import os
+import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 
 from . import config as cfg
+from .data import SHEDDABLE
 from .db import q
 def resolve_webhook(path):
     url = os.environ.get("FLEETDASH_WEBHOOK", "").strip()
