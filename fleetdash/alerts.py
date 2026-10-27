@@ -8,7 +8,7 @@ import urllib.error
 import urllib.request
 
 from . import config as cfg
-from .data import SHEDDABLE
+from .data import SHEDDABLE, UNITS
 from .db import q
 def resolve_webhook(path):
     url = os.environ.get("FLEETDASH_WEBHOOK", "").strip()
@@ -574,6 +574,11 @@ def unit_check(key, d):
     units = d.get("units")
     if not units:
         return
+    names = UNITS.get(key)
+    if names:
+        # 名单外不判定: 对端 server 可能还跑旧名单(四端同步有时间差),
+        # 已退役 unit 的 inactive 是账目状态、不是故障。
+        units = {u: s for u, s in units.items() if u in names}
     gd = d.get("guardian_now")
     shedding = bool(gd) and gd != "NORMAL"
     seen = set()

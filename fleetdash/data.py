@@ -558,21 +558,25 @@ UNITS = {
     # 10-04: llm-api(vLLM) 停用留作回滚, 生产 LLM 换 tf-qwen36(TensorFold systemd 常驻)
     # 10-25: embed/rerank 引擎 venv→docker(容器 embed/rerank, restart=unless-stopped,
     # 无 systemd 单元, 活体由 collector 端口探 8004/8005 覆盖); 代理单元保留在此。
-    "4c47": ["tf-qwen36", "embed-proxy", "rerank-proxy",
+    # 10-27: tf-qwen36 摘除 —— 10-23 起 TF 换容器 tf_qwen36_35b(Up, :8000 /v1/models
+    # 实测正常), systemd 单元 dead 仅留回滚位; :8000 端口探活已覆盖活体。
+    "4c47": ["embed-proxy", "rerank-proxy",
              "asr-api", "face-api",
              "vram-guardian"],
     # cosy-api 2026-10-25 卸载摘除(停于 10-23, TTS 收敛到 dgx2 Ming :8101)
-    "53fa": ["mineru-api", "popo-api", "popo-engine", "vram-guardian",
-             "fqtts-api", "fqtts-api2", "fqtts-api3"],
+    # 10-27: fqtts-api×3 摘除 —— 9-27 下线、unit 文件 10-27 实证已删
+    # (is-enabled=not-found), Ming 活体由 8101/8094 端口探活覆盖。
+    "53fa": ["mineru-api", "popo-api", "popo-engine", "vram-guardian"],
     # dbdd: supervisor/maintenance 是 user unit, 系统级 is-active 查不到;
     # flash 容器死活由 8888 端口探活(collector)覆盖, 这里只盯 guardian。
     "dbdd": ["vram-guardian"],
 }
 # watchdog WECOM_WATCHDOG_SHEDDABLE: guardian 卸载期间这些 unit 掉线属预期
+# 10-27: 清空 —— 原成员 fqtts×3 已全退役(见上), 在役单元卸载都属真告警。
 
 
 
-SHEDDABLE = {"fqtts-api", "fqtts-api2", "fqtts-api3"}
+SHEDDABLE = set()
 
 
 
