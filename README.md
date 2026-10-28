@@ -47,6 +47,8 @@ git clone https://github.com/0mao0/dgx-spark-fleetdash.git && cd dgx-spark-fleet
 
 服务清单**不用改代码**：写 `~/fleetdash/services.json`（格式见
 `services.example.json`）。主机标识取 `--host`，缺省按 hostname 自动匹配。
+systemd 户口名单同理：`~/fleetdash/units.json`（见 `units.example.json`），
+不填 = 只走端口探活、不查单元状态。
 
 ### 2. 观察者 edge（一台即可，建议公网可达的 VPS）
 
@@ -64,6 +66,15 @@ peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.js
 被监控机需 `scripts/power-sudoers` 进 `/etc/sudoers.d/`、token 放
 `~/fleetdash/power.token`(600)、`scripts/fleetdash-wol.service` 开机重装 WoL
 （magic packet 由同网段在线 peer 代发）。
+
+## 新集群五步（换机/扩容）
+
+1. `git clone` 本仓：被监控机 `./deploy.sh dgx <标识> master|slave`，观察者机 `./deploy.sh edge`；
+2. 服务表 `~/fleetdash/services.json`：照 `services.example.json` 填端口/类别/容器别名；
+3. systemd 户口 `~/fleetdash/units.json`：照 `units.example.json`（不填则只走端口探活）；
+4. 现场值：webhook / 引擎 key / 电源 token，模板见 `.env.example` 与下「安全」；
+5. 模型服务本体用各配方仓一键部署（unit 文件跟着服务走）；edge 的 peers 热加载见 `peers.example.json`。
+   统一内存保护可选装：`sudo bash components/guardian/install.sh`。
 
 ## 服务分类与字段规范（统计口径）
 
@@ -103,6 +114,9 @@ peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.js
 | scripts/install-edge.sh | VPS/观察者侧 root 系统服务安装（幂等可重跑升级） |
 | scripts/power-sudoers / scripts/fleetdash-wol.service | 电源操作与 WoL 配套 |
 | services.example.json | 服务表外部配置样例 |
+| units.example.json | systemd 户口名单外部配置样例（server 端，按主机标识覆盖内置表） |
+| .env.example | 机上现场值模板（webhook / 引擎 key / 电源 token 占位） |
+| components/guardian/ | GB10 统一内存保护组件（可选安装，阈值与 shed 名单全 env 化） |
 | peers.example.json | edge 热加载 peers 样例 |
 | tests/render-test.py / tests/report-drill.py | 日报出图演练（不发群）/ 手动推送 |
 | tests/test_*.py | 能耗积分、数据契约、请求速率三组回归 |
@@ -113,6 +127,8 @@ peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.js
 - 仓库永不存密钥：引擎 key 走 `~/fleetdash/vllm.key`(600) 或
   `FLEETDASH_VLLM_KEY`；推送 webhook 走 edge 机 `/etc/fleetdash/webhook`(600)；
   电源 token 走各机 `~/fleetdash/power.token`(600)。文件缺失 = 对应功能关闭。
+- systemd 户口名单不进代码也不进仓：机上 `~/fleetdash/units.json` 按
+  主机标识整组覆盖内置默认表（本舰队的表只是内置样例）。
 - `/api/power` 连错 3 次锁 5 分钟；所有推送走磁盘闩锁防重启重推。
 - 页面自身无鉴权，公网访问请挂在反代 + basic auth 之后。
 

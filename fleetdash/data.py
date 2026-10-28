@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+import sys
 import time
 
 from . import config as cfg
@@ -503,13 +504,45 @@ def guardian_now():
 
 
 
+_UNITS_OVERRIDES = None   # {host_key: [unit, ...]}，来自 ~/fleetdash/units.json
+_UNITS_MTIME = 0.0
+
+
+def units_for(key):
+    """户口名单：机上 units.json 按 host key 整组覆盖内置 UNITS。
+    文件缺失/解析失败回退内置表；新集群不填 = 户口线自动关闭(端口线照跑)。
+    坏文件只打日志不炸监控(与 edge peers 热加载同语义)。"""
+    global _UNITS_OVERRIDES, _UNITS_MTIME
+    path = os.environ.get("FLEETDASH_UNITS_FILE",
+                          os.path.expanduser("~/fleetdash/units.json"))
+    try:
+        mt = os.path.getmtime(path)
+    except OSError:
+        mt = None
+    if mt is None:
+        _UNITS_OVERRIDES = {}
+        _UNITS_MTIME = 0.0
+    elif mt != _UNITS_MTIME or _UNITS_OVERRIDES is None:
+        try:
+            with open(path) as f:
+                raw = json.load(f)
+            _UNITS_OVERRIDES = {k: v for k, v in raw.items()
+                                if not k.startswith("_") and isinstance(v, list)}
+        except Exception as e:
+            print(f"[fleetdash] units.json 解析失败, 用内置名单: {e}",
+                  file=sys.stderr, flush=True)
+            _UNITS_OVERRIDES = {}
+        _UNITS_MTIME = mt
+    return _UNITS_OVERRIDES.get(key) or UNITS.get(key) or []
+
+
 def units_now():
     """systemctl is-active 批量查询(faye 非 root 也可查询单元状态)。
     返回 {unit: active/inactive/...} 或 {}(本机不在清单/查询失败)。"""
     import socket
     hn = socket.gethostname()
-    names = UNITS.get("4c47" if "4c47" in hn else "53fa" if "53fa" in hn
-                      else host_key()) or []
+    key = "4c47" if "4c47" in hn else "53fa" if "53fa" in hn else host_key()
+    names = units_for(key)
     if not names:
         return {}
     try:

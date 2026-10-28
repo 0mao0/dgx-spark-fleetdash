@@ -1,0 +1,4 @@
+{
+  "_说明": "systemd 户口名单（server 端）：机上有 ~/fleetdash/units.json 时按主机标识整组覆盖内置 UNITS 名单（fleetdash/data.py）。key = 主机标识（hostname 含 4c47/53fa/dbdd 时映射到对应键，否则用 hostname 或 --host）。值为 systemctl is-active 的单元名列表；缺省/解析失败回退内置表，新集群不填 = 户口线自动关闭（端口探活照跑）。路径可用 FLEETDASH_UNITS_FILE 改。带 _ 前缀的键被忽略。",
+  "node1": ["my-api", "vram-guardian"]
+}
