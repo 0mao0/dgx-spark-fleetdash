@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="580" viewBox="0 0 860 580" font-family="Microsoft YaHei, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6b7a"/>
+    </marker>
+  </defs>
+  <rect width="860" height="580" fill="#fbfbf9"/>
+  <text x="430" y="34" text-anchor="middle" font-size="19" font-weight="bold" fill="#22303c">一台 edge 管 N 台：一台 VPS 汇总全部机器</text>
+
+  <!-- VPS edge -->
+  <rect x="250" y="62" width="360" height="86" rx="10" fill="#eaf3fb" stroke="#3a76a8" stroke-width="1.6"/>
+  <text x="430" y="90" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f4e77">观察者机（VPS）：fleetdash-edge</text>
+  <text x="430" y="112" text-anchor="middle" font-size="13" fill="#33506a">:9101 汇总页 + 30s 轮询 + 告警判定 + 日报</text>
+  <text x="430" y="132" text-anchor="middle" font-size="13" fill="#33506a">对端表 /etc/fleetdash/peers.json（热加载）</text>
+
+  <!-- webhook -->
+  <rect x="650" y="72" width="186" height="66" rx="10" fill="#fdf1e7" stroke="#c98a3d" stroke-width="1.4"/>
+  <text x="743" y="98" text-anchor="middle" font-size="14" font-weight="bold" fill="#8a5a1e">企微 webhook</text>
+  <text x="743" y="120" text-anchor="middle" font-size="12" fill="#8a5a1e">告警 + 每日运维报告</text>
+  <line x1="610" y1="105" x2="648" y2="105" stroke="#c98a3d" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+
+  <!-- arrows to DGX -->
+  <line x1="330" y1="148" x2="125" y2="248" stroke="#5b6b7a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="400" y1="148" x2="345" y2="248" stroke="#5b6b7a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="460" y1="148" x2="517" y2="248" stroke="#5b6b7a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="530" y1="148" x2="660" y2="248" stroke="#5b6b7a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="430" y="205" text-anchor="middle" font-size="13" fill="#5b6b7a">每台 30 秒拉一次 /api/agg（拉取方向：VPS → 机器）</text>
+
+  <!-- DGX boxes -->
+  <g>
+    <rect x="28" y="252" width="196" height="118" rx="10" fill="#eef7ee" stroke="#4c8a4c" stroke-width="1.5"/>
+    <text x="126" y="280" text-anchor="middle" font-size="15" font-weight="bold" fill="#2f5d2f">DGX ①</text>
+    <text x="126" y="302" text-anchor="middle" font-size="12" fill="#39603a">collector 端口探活</text>
+    <text x="126" y="320" text-anchor="middle" font-size="12" fill="#39603a">server :9100 出数</text>
+    <text x="126" y="338" text-anchor="middle" font-size="12" fill="#39603a">units.json（可选）</text>
+    <text x="126" y="356" text-anchor="middle" font-size="12" fill="#39603a">services.json（可选）</text>
+  </g>
+  <g>
+    <rect x="246" y="252" width="196" height="118" rx="10" fill="#eef7ee" stroke="#4c8a4c" stroke-width="1.5"/>
+    <text x="344" y="280" text-anchor="middle" font-size="15" font-weight="bold" fill="#2f5d2f">DGX ②</text>
+    <text x="344" y="302" text-anchor="middle" font-size="12" fill="#39603a">collector 端口探活</text>
+    <text x="344" y="320" text-anchor="middle" font-size="12" fill="#39603a">server :9100 出数</text>
+    <text x="344" y="338" text-anchor="middle" font-size="12" fill="#39603a">units.json（可选）</text>
+    <text x="344" y="356" text-anchor="middle" font-size="12" fill="#39603a">services.json（可选）</text>
+  </g>
+  <text x="515" y="316" text-anchor="middle" font-size="22" fill="#8a97a3">…</text>
+  <g>
+    <rect x="560" y="252" width="196" height="118" rx="10" fill="#eef7ee" stroke="#4c8a4c" stroke-width="1.5"/>
+    <text x="658" y="280" text-anchor="middle" font-size="15" font-weight="bold" fill="#2f5d2f">DGX ⓝ</text>
+    <text x="658" y="302" text-anchor="middle" font-size="12" fill="#39603a">collector 端口探活</text>
+    <text x="658" y="320" text-anchor="middle" font-size="12" fill="#39603a">server :9100 出数</text>
+    <text x="658" y="338" text-anchor="middle" font-size="12" fill="#39603a">units.json（可选）</text>
+    <text x="658" y="356" text-anchor="middle" font-size="12" fill="#39603a">services.json（可选）</text>
+  </g>
+
+  <!-- requirements -->
+  <rect x="28" y="404" width="806" height="150" rx="10" fill="#f4f2ef" stroke="#9a938a" stroke-width="1.2"/>
+  <text x="48" y="432" font-size="14" font-weight="bold" fill="#4a4238">部署只需满足 4 条</text>
+  <text x="48" y="458" font-size="13" fill="#4a4238">1. 网络：edge 能连到每台 DGX 的 9100 端口（公网、内网或 Tailscale 均可）</text>
+  <text x="48" y="480" font-size="13" fill="#4a4238">2. 软件：每台一条命令 ./deploy.sh dgx 主机名 slave，VPS 上 ./deploy.sh edge（只要 python3）</text>
+  <text x="48" y="502" font-size="13" fill="#4a4238">3. 密钥：企微 webhook、模型 key 走 env / 600 权限文件，不进仓；units.json 可选填</text>
+  <text x="48" y="524" font-size="13" fill="#4a4238">4. 加第 N+1 台 = edge 的 peers.json 加一行（热加载，不重启）</text>
+</svg>

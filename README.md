@@ -18,6 +18,8 @@
   （`edge-cache/<机>.json`），不建集中库。
 - 出口两个：浏览器（须挂反代+basic auth）、企业微信（告警+日报）。
   拉取方向永远是 edge→机器，机器从不向外推数据。
+- 机器数量不设限：N 台共用一台 edge，每台用自己的 services.json /
+  units.json 独立配置；加第 N+1 台 = edge 的 peers.json 加一行（热加载，不重启）。
 
 ## 页面
 
@@ -68,6 +70,8 @@ peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.js
 （magic packet 由同网段在线 peer 代发）。
 
 ## 新集群五步（换机/扩容）
+
+![多机形态](assets/multi-node.png)
 
 1. `git clone` 本仓：被监控机 `./deploy.sh dgx <标识> master|slave`，观察者机 `./deploy.sh edge`；
 2. 服务表 `~/fleetdash/services.json`：照 `services.example.json` 填端口/类别/容器别名；
@@ -121,6 +125,7 @@ peers 经环境变量或 `--peers` 指定；edge 支持 `/etc/fleetdash/peers.js
 | tests/render-test.py / tests/report-drill.py | 日报出图演练（不发群）/ 手动推送 |
 | tests/test_*.py | 能耗积分、数据契约、请求速率三组回归 |
 | tools/make_arch.py → assets/architecture.png | 本 README 架构图的生成脚本 |
+| assets/multi-node.svg → .png | 多机形态与部署四条件示意图（SVG 手稿随仓） |
 
 ## 安全
 
