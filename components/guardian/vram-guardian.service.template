@@ -1,0 +1,19 @@
+[Unit]
+Description=VRAM/unified-memory guardian for GB10 (sheds uncapped torch services before OOM hang)
+After=network.target
+Documentation=file://@HOME@/scripts/vram_guardian.py
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=@HOME@
+ExecStart=/usr/bin/python3 @HOME@/scripts/vram_guardian.py
+Restart=on-failure
+RestartSec=5
+MemoryMax=512M
+# Tune via env (optional):
+# Environment=VRAM_GUARDIAN_WARN=108 VRAM_GUARDIAN_CRIT=115 VRAM_GUARDIAN_RECOVER=90
+# Environment=VRAM_GUARDIAN_SHED_CRITICAL=face-api,my-torch-service
+
+[Install]
+WantedBy=multi-user.target

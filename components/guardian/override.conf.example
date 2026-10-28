@@ -1,0 +1,8 @@
+# 阈值按机器调（GiB of committed memory）。复制为
+# /etc/systemd/system/vram-guardian.service.d/override.conf 后改值，再
+# sudo systemctl daemon-reload && sudo systemctl restart vram-guardian。
+# WARN < shed DEGRADED 名单；CRIT < shed CRITICAL 名单；低于 RECOVER 持续后回满。
+[Service]
+#Environment=VRAM_GUARDIAN_WARN=108 VRAM_GUARDIAN_CRIT=115 VRAM_GUARDIAN_RECOVER=90
+#Environment=VRAM_GUARDIAN_SHED_DEGRADED=
+#Environment=VRAM_GUARDIAN_SHED_CRITICAL=face-api
