@@ -43,8 +43,12 @@ SERVICES = {
             8000: ("tf-qwen36", "llm", "qwen3.6-35b·TF"),
             8001: ("asr-api", "asr", None),
             # 8003 cosy-api 2026-10-25 卸载(停于 10-23, TTS 收敛到 dgx2 Ming :8101)
-            8004: ("embed-api", "embed", "qwen3-embedding", 18004),
-            8005: ("rerank-api", "rerank", "qwen3-reranker", 18005),
+            # 10-28 compose 收口: 代理进 compose, 引擎口 18004/18005 收进容器内网
+            # (宿主不可达)。第 5 位 backend 置 None = 单探代理口: 代理 /health
+            # 透传引擎 /health, 引擎死/卡经代理现 502/超时, 探活语义不变。
+            # 显存归因走下方 containers 映射(容器名 embed/rerank), 与此无关。
+            8004: ("embed-api", "embed", "qwen3-embedding", None),
+            8005: ("rerank-api", "rerank", "qwen3-reranker", None),
             8006: ("face-api", "face", None),
             # 8007 sage 转正服务 2026-10-25: 容器 sage-api(原 sage-tf-test :18892 测试实例),
             # restart=unless-stopped, 与服务同名免别名; 无 systemd 单元, 活体靠端口探。
