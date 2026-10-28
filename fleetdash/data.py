@@ -593,8 +593,9 @@ UNITS = {
     # 无 systemd 单元, 活体由 collector 端口探 8004/8005 覆盖); 代理单元保留在此。
     # 10-27: tf-qwen36 摘除 —— 10-23 起 TF 换容器 tf_qwen36_35b(Up, :8000 /v1/models
     # 实测正常), systemd 单元 dead 仅留回滚位; :8000 端口探活已覆盖活体。
-    "4c47": ["embed-proxy", "rerank-proxy",
-             "asr-api", "face-api",
+    # 10-28: embed-proxy/rerank-proxy 摘除 —— 代理进 compose(容器 embed-proxy/rerank-proxy,
+    # systemd 单元已 stop+disable 留一周回滚位); 活体=8004/8005 端口探活+容器归因。
+    "4c47": ["asr-api", "face-api",
              "vram-guardian"],
     # cosy-api 2026-10-25 卸载摘除(停于 10-23, TTS 收敛到 dgx2 Ming :8101)
     # 10-27: fqtts-api×3 摘除 —— 9-27 下线、unit 文件 10-27 实证已删
