@@ -58,7 +58,9 @@ SERVICES = {
         # 10-25: embed/rerank 引擎 venv→docker(vllm/vllm-openai:v0.32.0),
         # 服务名沿用 embed-api/rerank-api(代理仍裸 systemd), 容器实名 embed/rerank。
         "containers": {"tf-qwen36": "tf_qwen36_35b",
-                       "embed-api": "embed", "rerank-api": "rerank"},
+                       "embed-api": "embed", "rerank-api": "rerank",
+                       # 10-29: ASR 换 Qwen3-ASR 后显存挂 q3asr-prod 容器(服务名≠容器名)
+                       "asr-api": "q3asr-prod"},
     },
     "53fa": {
         "hostname": "spark-53fa",
