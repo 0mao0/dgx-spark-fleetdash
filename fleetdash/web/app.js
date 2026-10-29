@@ -88,6 +88,47 @@ function sparkline(pts, color, h = 46) {
     ` r="2.6" fill="${color}"/></svg>`;
 }
 
+/* ---------- 堆叠柱状图（内存按服务归因） ---------- */
+// pts: [[ts, v1, v2, ...seg...]], colors 与 seg 对齐(含可选残差段), 零宽段跳过
+function stackBars(pts, colors, h = 46) {
+  const W = 300, H = h, PAD = 4;
+  if (!pts || pts.length < 2) {
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">` +
+      `<text x="${W / 2}" y="${H / 2 + 4}" fill="#55606d" font-size="12"` +
+      ` text-anchor="middle">窗口内无数据</text></svg>`;
+  }
+  const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
+  const span = Math.max(1, t1 - t0);
+  const totals = pts.map((p) => p.slice(1).reduce((a, b) => a + b, 0));
+  const hi = Math.max(...totals, 1e-6) * 1.04;
+  const X = (t) => PAD + (t - t0) / span * (W - 2 * PAD);
+  const bw = Math.max(1.2, ((W - 2 * PAD) / pts.length) * 0.9);
+  let bars = "";
+  for (const p of pts) {
+    const x = X(p[0]) - bw / 2;
+    let y = H - PAD;
+    for (let s = 1; s < p.length; s++) {
+      const v = p[s];
+      if (v <= 0) continue;
+      const bh = v / hi * (H - 2 * PAD);
+      bars += `<rect x="${x.toFixed(1)}" y="${(y - bh).toFixed(1)}" ` +
+        `width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${colors[s - 1]}"/>`;
+      y -= bh;
+    }
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"` +
+    ` shape-rendering="crispEdges">${bars}</svg>`;
+}
+const PALETTE = ["#4c8dff", "#e8590c", "#1c7ed6", "#7048e8", "#0ca678",
+                 "#f59f00", "#c2255c", "#2fb3a7", "#868e96"];
+function svcColorMap(snap) {
+  const map = {};
+  (snap && snap.models ? snap.models : []).forEach((m) => {
+    map[m.svc] = KIND_COLOR[m.kind] || "#adb5bd";
+  });
+  return map;
+}
+
 /* ---------- 通用小工具 ---------- */
 function seriesOf(ser, key) { return (ser && ser.heat && ser.heat[key]) || []; }
 function modelSeriesOf(ser, svc, key) {
@@ -157,6 +198,23 @@ function sysRow(cfgItem, snap, ser) {
     pts = seriesOf(ser, "mem_used");
     val = fmtNum(snap.mem_used, 1) + "G";
     sub = snap.mem_total ? `共 ${fmtNum(snap.mem_total, 0)}G · 峰 ${fmtNum(peak(pts), 1)}G` : "";
+    // 堆叠柱状(按服务显存归因 + 未归因残差); 老数据没有堆叠列时退回单线
+    const st = ser && ser.vram_stack;
+    if (st && st.pts && st.pts.length >= 2) {
+      const cmap = svcColorMap(snap);
+      const names = st.order.slice();
+      const cols = st.order.map((s, i) => cmap[s] || PALETTE[i % PALETTE.length]);
+      if (st.other) { names.push("未归因"); cols.push("#3d4655"); }
+      const el = rowEl(name, val, sub, [], cfgItem.color, SYS_FMT.mem);
+      el.querySelector(".chart").innerHTML =
+        `<span class="axis">${fmtAxisTs(st.pts[0][0])} →</span>` + stackBars(st.pts, cols);
+      const svg = el.querySelector("svg");
+      svg._fd = {
+        pts: st.pts.map((p) => [p[0], p.slice(1).reduce((a, b) => a + b, 0)]),
+        segs: st.pts, names, colors: cols, fmt: (v) => fmtNum(v, 1) + " G",
+      };
+      return el;
+    }
   } else if (k === "temp") {
     pts = seriesOf(ser, "gpu_temp");
     val = fmtNum(snap.gpu_temp, 0) + "℃";
@@ -230,6 +288,8 @@ function svcRow(m, ser) {
     pts = g("act_rate").length ? g("act_rate") : g("req_run");
     ptsLabel = g("act_rate").length ? "请求/s" : "并发";
   }
+  // 每张卡片都带显存归因(GB10 统一内存: 这个数就是该服务实际占的内存)
+  if (m.vram && m.vram > 0) sub = (sub ? sub + " · " : "") + `VRAM ${fmtNum(m.vram / 1024, 1)}G`;
   const el = rowEl(nameHtml + (ptsLabel ? `<span class="badge">${ptsLabel}</span>` : ""),
                    val, sub, pts, dead ? "#e5484d" : color, PTS_FMT[ptsLabel]);
   if (dead) el.classList.add("dead");
@@ -410,8 +470,21 @@ document.addEventListener("mousemove", (e) => {
   let lo = 0, hi = n - 1;
   while (hi - lo > 1) { const mid = (lo + hi) >> 1;
     if (fd.pts[mid][0] < tHit) lo = mid; else hi = mid; }
-  const [t, v] = (tHit - fd.pts[lo][0] <= fd.pts[hi][0] - tHit) ? fd.pts[lo] : fd.pts[hi];
-  tip.textContent = `${fmtTipTs(t, t1 - t0 > 14400)} · ${fd.fmt(v)}`;
+  const i = (fd.pts[hi][0] - tHit) < (tHit - fd.pts[lo][0]) ? hi : lo;
+  const t = fd.pts[i][0], v = fd.pts[i][1];
+  if (fd.segs && fd.segs[i]) {
+    let html = `<div>${fmtTipTs(t, t1 - t0 > 14400)} · 合计 ${fd.fmt(v)}</div>`;
+    const row = fd.segs[i];
+    for (let s = 1; s < row.length; s++) {
+      if (!row[s] || row[s] < 0.05) continue;
+      html += `<div><span style="display:inline-block;width:7px;height:7px;` +
+        `border-radius:50%;background:${fd.colors[s - 1]};margin-right:5px"></span>` +
+        `${fd.names[s - 1]} ${fmtNum(row[s], 1)} G</div>`;
+    }
+    tip.innerHTML = html;
+  } else {
+    tip.textContent = `${fmtTipTs(t, t1 - t0 > 14400)} · ${fd.fmt(v)}`;
+  }
   tip.hidden = false;
   const flip = e.clientX + 160 > innerWidth;
   tip.style.left = (flip ? e.clientX - 150 : e.clientX + 12) + "px";

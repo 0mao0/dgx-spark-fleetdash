@@ -162,6 +162,7 @@ def series(seconds):
                 d = cur - prev
                 tok_pts.append([r[0], cur if d < 0 else d])
             prev = cur
+    mem_ts = {r[0]: r[4] for r in srows}     # ts -> 宿主内存 used(G)，堆叠残差列用
     srows = downsample(srows)
     heat = {
         "gpu_temp": [[r[0], r[1]] for r in srows],
@@ -193,7 +194,33 @@ def series(seconds):
     for svc in by_svc:
         for key in MK:
             by_svc[svc][key] = downsample(by_svc[svc][key])
-    return {"heat": heat, "models": by_svc}
+
+    # vram 堆叠时序(内存柱状图用): 按采样 ts 对齐, 整条时间线一次性抽稀。
+    # 各 svc 时序是各自独立抽稀的, ts 可能对不上, 堆叠必须走这份对齐数据。
+    # 单位统一成 GiB(vram 表里是 MiB); 残差列 = 宿主内存 used - 归因合计。
+    vrows = q("SELECT ts, svc, vram FROM model WHERE ts>=? ORDER BY ts", (since,))
+    ts_v = {}
+    for ts, svc, v in vrows:
+        ts_v.setdefault(ts, {})[svc] = (v or 0.0) / 1024.0
+    ts_all = sorted(ts_v)
+    stack_pts = []
+    order = []
+    if ts_all:
+        lastv = ts_v[ts_all[-1]]
+        order = sorted(lastv, key=lambda s: -lastv[s])
+        for t in reversed(ts_all):            # 只在更早采样里露过面的服务补到尾部
+            for s in ts_v[t]:
+                if s not in order:
+                    order.append(s)
+        for p in downsample([[t, 0.0] for t in ts_all]):
+            t = p[0]
+            row = [round(ts_v[t].get(s, 0.0), 3) for s in order]
+            if mem_ts.get(t) is not None:
+                row.append(max(0.0, round(mem_ts[t] - sum(row), 3)))
+            stack_pts.append([t] + row)
+    return {"heat": heat, "models": by_svc,
+            "vram_stack": {"order": order, "pts": stack_pts,
+                           "other": any(len(p) > 1 + len(order) for p in stack_pts)}}
 
 
 # ------------------------------------------------- 突变归因 (spec 2026-09-23)
