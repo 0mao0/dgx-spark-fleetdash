@@ -150,7 +150,7 @@ def series(seconds):
     now = int(time.time())
     since = now - seconds
     srows = q("SELECT ts,gpu_temp,cpu_max,gpu_util,mem_used,gpu_pw,sm_mhz,cap_delta_us,"
-              "disk_used,net_rx_mbs,net_tx_mbs,day_tok FROM sample WHERE ts>=?"
+              "disk_used,net_rx_mbs,net_tx_mbs,day_tok,mem_total FROM sample WHERE ts>=?"
               " ORDER BY ts", (since,))
     # token 增量必须在抽稀前按相邻采样求差; 跨天 day_tok 归零(变小)按当日已生成计。
     tok_pts = []
@@ -163,6 +163,7 @@ def series(seconds):
                 tok_pts.append([r[0], cur if d < 0 else d])
             prev = cur
     mem_ts = {r[0]: r[4] for r in srows}     # ts -> 宿主内存 used(G)，堆叠残差列用
+    mem_tot_ts = {r[0]: (r[12] if len(r) > 12 else None) for r in srows}
     srows = downsample(srows)
     heat = {
         "gpu_temp": [[r[0], r[1]] for r in srows],
@@ -215,12 +216,18 @@ def series(seconds):
         for p in downsample([[t, 0.0] for t in ts_all]):
             t = p[0]
             row = [round(ts_v[t].get(s, 0.0), 3) for s in order]
-            if mem_ts.get(t) is not None:
-                row.append(max(0.0, round(mem_ts[t] - sum(row), 3)))
+            used = mem_ts.get(t)
+            if used is not None:
+                row.append(max(0.0, round(used - sum(row), 3)))     # 系统/其他进程
+                tot = mem_tot_ts.get(t)
+                if tot:
+                    row.append(max(0.0, round(tot - used, 3)))      # 空闲
             stack_pts.append([t] + row)
+    n_seg = 1 + len(order)
     return {"heat": heat, "models": by_svc,
             "vram_stack": {"order": order, "pts": stack_pts,
-                           "other": any(len(p) > 1 + len(order) for p in stack_pts)}}
+                           "other": any(len(p) > n_seg for p in stack_pts),
+                           "free": any(len(p) > n_seg + 1 for p in stack_pts)}}
 
 
 # ------------------------------------------------- 突变归因 (spec 2026-09-23)

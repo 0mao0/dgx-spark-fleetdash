@@ -204,7 +204,9 @@ function sysRow(cfgItem, snap, ser) {
       const cmap = svcColorMap(snap);
       const names = st.order.slice();
       const cols = st.order.map((s, i) => cmap[s] || PALETTE[i % PALETTE.length]);
-      if (st.other) { names.push("未归因"); cols.push("#3d4655"); }
+      // 尾部残差拆两段：系统/其他进程(已用-归因) + 空闲(总-已用)，柱高恒等于总内存
+      if (st.other) { names.push("系统/其他"); cols.push("#3d4655"); }
+      if (st.free) { names.push("空闲"); cols.push("#242b36"); }
       const el = rowEl(name, val, sub, [], cfgItem.color, SYS_FMT.mem);
       el.querySelector(".chart").innerHTML =
         `<span class="axis">${fmtAxisTs(st.pts[0][0])} →</span>` + stackBars(st.pts, cols);
@@ -473,13 +475,19 @@ document.addEventListener("mousemove", (e) => {
   const i = (fd.pts[hi][0] - tHit) < (tHit - fd.pts[lo][0]) ? hi : lo;
   const t = fd.pts[i][0], v = fd.pts[i][1];
   if (fd.segs && fd.segs[i]) {
-    let html = `<div>${fmtTipTs(t, t1 - t0 > 14400)} · 合计 ${fd.fmt(v)}</div>`;
     const row = fd.segs[i];
+    const total = row.slice(1).reduce((a, b) => a + b, 0) || 1;
+    let html = `<div style="margin-bottom:3px">${fmtTipTs(t, t1 - t0 > 14400)}` +
+      ` · 合计 ${fmtNum(total, 1)} G</div>`;
+    const BAR = 96;                               // 弹框内水平条基准宽(px)
     for (let s = 1; s < row.length; s++) {
       if (!row[s] || row[s] < 0.05) continue;
-      html += `<div><span style="display:inline-block;width:7px;height:7px;` +
-        `border-radius:50%;background:${fd.colors[s - 1]};margin-right:5px"></span>` +
-        `${fd.names[s - 1]} ${fmtNum(row[s], 1)} G</div>`;
+      const w = Math.max(1, Math.round(row[s] / total * BAR));
+      html += `<div style="display:flex;align-items:center;gap:5px">` +
+        `<span style="flex:0 0 68px;text-align:right;color:#93a0b4">${fd.names[s - 1]}</span>` +
+        `<span style="flex:0 0 ${BAR}px;height:6px;background:#1b222c;border-radius:3px;overflow:hidden">` +
+        `<span style="display:block;height:100%;width:${w}px;background:${fd.colors[s - 1]}"></span></span>` +
+        `<span>${fmtNum(row[s], 1)} G</span></div>`;
     }
     tip.innerHTML = html;
   } else {
