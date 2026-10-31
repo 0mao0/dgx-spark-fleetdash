@@ -80,7 +80,9 @@ SERVICES = {
         },
         # 8101 是 nginx 流式代理, 引擎 vllm-omni 在容器 ming-tts 内 (:8094)。
         # 显存按容器名认领, 服务名 ming3 ≠ 容器名 ming-tts, 必须走别名。
-        "containers": {"ming3": "ming-tts"},
+        # 10-31: 该别名同时喂 LogRateTracker 日志路(容器名≠服务名时数日志行
+        # 必须实名, 否则 para-asr/ming3 活跃度恒 NULL —— 已修)。
+        "containers": {"ming3": "ming-tts", "para-asr": "para-cpp-test"},
     },
     "dbdd": {
         "hostname": "spark-dbdd",
@@ -806,7 +808,8 @@ class LogRateTracker:
             self.containers = set(out.split()) if out else set()
         return self.containers
 
-    def rate(self, svc, now):
+    def rate(self, svc, now, name=None):
+        # name=容器实名(containers 别名解析); 缺省按服务名==容器名处理。
         p = self.prev_ts.get(svc)
         self.prev_ts[svc] = now
         if p is None:
@@ -815,11 +818,12 @@ class LogRateTracker:
         if dt < 3:
             return None
         if self.use_docker:
-            if svc not in self._docker_names():
+            cname = name or svc
+            if cname not in self._docker_names():
                 return None
             iso = time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z", time.gmtime(p))
             iso_end = time.strftime("%Y-%m-%dT%H:%M:%S.000000000Z", time.gmtime(now))
-            out = sh(f"docker logs --since {iso} --until {iso_end} {svc} 2>&1 "
+            out = sh(f"docker logs --since {iso} --until {iso_end} {cname} 2>&1 "
                      "| wc -l", timeout=10)
         else:
             # --since @<epoch>: journalctl 接受 unix 时间; -q --no-pager 保证纯行数可数
@@ -938,7 +942,7 @@ def collect(cfg, tracker, cap_tracker, net_tracker, log_tracker, clock_tracker, 
         # 活跃度: vLLM 有 HTTP 计数器时用精确请求速率, 否则日志行数兜底
         act, act_kind = stats.get("http_rps"), "http"
         if act is None:
-            act, act_kind = log_tracker.rate(svc, now), "log"
+            act, act_kind = log_tracker.rate(svc, now, alias.get(svc)), "log"
         rows.append({
             "ts": now, "svc": svc, "kind": kind,
             "model": model_hint, "vram": round(info.get("vram", 0.0), 1),
