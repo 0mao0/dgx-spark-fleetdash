@@ -281,8 +281,12 @@ function svcRow(m, ser) {
     val = has ? fmtNum(m.ttft_ms / 1000, 2) + " s" : "—";
     sub = `并发 ${rr === null || rr === undefined ? "—" : rr}` +
           (has ? "" : " · 引擎未暴露 TTFT");
-    pts = has && g("ttft_ms").length ? g("ttft_ms") : g("req_run");
-    ptsLabel = has && g("ttft_ms").length ? "TTFT" : "并发";
+    // tts 无 /metrics 时 req_run 恒空, 曲线必须再兜底 act_rate(日志速率),
+    // 否则 ming3 卡永远"窗口内无数据"(10-31 para-asr 排障时暴露)。
+    pts = has && g("ttft_ms").length ? g("ttft_ms")
+          : (g("req_run").length ? g("req_run") : g("act_rate"));
+    ptsLabel = has && g("ttft_ms").length ? "TTFT"
+               : (g("req_run").length ? "并发" : "请求/s");
   } else {
     val = `并发 ${rr === null || rr === undefined ? "—" : rr}`;
     const ar = m.act;
