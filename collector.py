@@ -72,6 +72,11 @@ SERVICES = {
             8007: ("mineru-api", "parse", None),
             8008: ("popo-api", "proxy", None),
             8010: ("popo-engine", "llm", "Popo"),
+            # 10-31 paraformer 流式 ASR 转正入监: 容器 para-cpp-test(funasr 2pass
+            # C++, CPU-only 免显存归因), 宿主 10096(127.0.0.1+Tailscale 双绑),
+            # 公网经 VPS /api/para/ 带 key 发布。docker 服务无 systemd 户口,
+            # 活体走端口探; 无 UNITS 条目属预期。
+            10096: ("para-asr", "asr", "paraformer"),
         },
         # 8101 是 nginx 流式代理, 引擎 vllm-omni 在容器 ming-tts 内 (:8094)。
         # 显存按容器名认领, 服务名 ming3 ≠ 容器名 ming-tts, 必须走别名。
