@@ -53,6 +53,11 @@ SERVICES = {
             # 8007 sage 转正服务 2026-10-25: 容器 sage-api(原 sage-tf-test :18892 测试实例),
             # restart=unless-stopped, 与服务同名免别名; 无 systemd 单元, 活体靠端口探。
             8007: ("sage-api", "llm", "sage-a1.5·TF"),
+            # 11-01 RE-USE 语音修复按需服务入监: 容器 reuse-enhance(NVIDIA 9.6M 洗声,
+            # GPU ~1G), 宿主 18060(127.0.0.1+Tailscale 双绑), 公网经 VPS /api/reuse/
+            # 带 key 发布。按需清洗(录参考音前), 不在 ASR 主链路上。docker 服务无
+            # systemd 户口, 活体走端口探; 无 UNITS 条目属预期(同 para-asr 口径)。
+            18060: ("reuse-api", "asr", "re-use"),
         },
         # TensorFold 容器实名≠服务名: 显存按容器名认领 + 进程榜反查都要走这层别名
         # 10-25: embed/rerank 引擎 venv→docker(vllm/vllm-openai:v0.32.0),
@@ -60,7 +65,9 @@ SERVICES = {
         "containers": {"tf-qwen36": "tf_qwen36_35b",
                        "embed-api": "embed", "rerank-api": "rerank",
                        # 10-29: ASR 换 Qwen3-ASR 后显存挂 q3asr-prod 容器(服务名≠容器名)
-                       "asr-api": "q3asr-prod"},
+                       "asr-api": "q3asr-prod",
+                       # 11-01: RE-USE 显存挂 reuse-enhance 容器(服务名≠容器名)
+                       "reuse-api": "reuse-enhance"},
     },
     "53fa": {
         "hostname": "spark-53fa",
