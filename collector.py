@@ -96,6 +96,13 @@ SERVICES = {
         # 生产机: 仅 Qwen3.8-Flash-Next (Mia TP1 配方, docker 容器, :8888)
         "ports": {
             8888: ("qwen38-flash", "llm", "qwen3.8-flash-next"),
+            # 11-03 MiniMax-H3 文生视频入监: ComfyUI 0.43 裸进程 systemd user unit
+            # comfyui-h3, 绑 tailnet 100.86.101.0:8188(不出公网)。按需窗口:
+            # 跑片前 flash-pause.sh 让位(8888 短暂 down 属预期, 卡片会红),
+            # 跑完 flash-resume.sh 回 200。无 /metrics → 引擎字段恒 NULL(页面显—);
+            # vram 归因无容器可认领(纯进程) 亦 NULL —— 存活/探活为真口径。
+            # user unit 不进 UNITS(系统级 is-active 查不到, 同 supervisor 口径)。
+            8188: ("t2v-comfy", "llm", "minimax-h3·quant"),
         },
         # 容器名≠服务名: 显存按「容器名==服务名」认领, 不加别名则 qwen38-flash 显存恒 0。
         # 10-05 起引擎为 TensorFold; 容器名沿革 vllm-fn-tp1(9-25 vLLM) ->
