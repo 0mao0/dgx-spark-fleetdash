@@ -8,10 +8,11 @@ const REFRESH_MS = 30000;
 const KIND_COLOR = {
   llm: "#e8590c", embed: "#1c7ed6", rerank: "#7048e8", asr: "#0ca678",
   tts: "#f59f00", face: "#868e96", parse: "#c2255c", proxy: "#adb5bd",
+  cv: "#0b7285",
 };
 const KIND_ZH = {
   llm: "LLM", embed: "Embed", rerank: "Rerank", asr: "ASR",
-  tts: "TTS", face: "人脸", parse: "解析", proxy: "代理",
+  tts: "TTS", face: "人脸", parse: "解析", proxy: "代理", cv: "视觉",
 };
 
 const params = new URLSearchParams(location.search);

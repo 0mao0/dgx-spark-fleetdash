@@ -58,6 +58,11 @@ SERVICES = {
             # 带 key 发布。按需清洗(录参考音前), 不在 ASR 主链路上。docker 服务无
             # systemd 户口, 活体走端口探; 无 UNITS 条目属预期(同 para-asr 口径)。
             18060: ("reuse-api", "asr", "re-use"),
+            # 11-04 DredgeAI YOLOv8n 人数统计入监: 容器 dredge-yolo(CPU-only 免显存,
+            # ~480M 宿主内存), 宿主 8104(127.0.0.1+Tailscale 双绑), 公网经 VPS
+            # /api/yolo/ 双层 key 发布。docker 服务无 systemd 户口, 活体走端口探;
+            # 服务名==容器名免别名; 无 UNITS 条目属预期(同 para-asr 口径)。
+            8104: ("dredge-yolo", "cv", "yolov8n"),
         },
         # TensorFold 容器实名≠服务名: 显存按容器名认领 + 进程榜反查都要走这层别名
         # 10-25: embed/rerank 引擎 venv→docker(vllm/vllm-openai:v0.32.0),
