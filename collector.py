@@ -108,6 +108,14 @@ SERVICES = {
             # vram 归因无容器可认领(纯进程) 亦 NULL —— 存活/探活为真口径。
             # user unit 不进 UNITS(系统级 is-active 查不到, 同 supervisor 口径)。
             8188: ("t2v-comfy", "llm", "minimax-h3·quant"),
+            # 11-06 Nemotron 3.5 Transcribe 批转录道入监: 容器 nemotron-transcribe
+            # (NVFP4 30B-A4B, vLLM+NeMo 插件, 绑 127.0.0.1:18090, 内网件无公网腿;
+            # 配方见 Manuals spark-dbdd-docker_mode/transcribe/)。自动让位: H3 队列
+            # 有活时 transcribe-guard(user unit)会 docker stop 本容器 → 卡片红属
+            # 预期, H3 空闲 60s 自动拉回(冷启 ~14 分钟, 红窗会持续一段)。docker
+            # 服务无 systemd 户口, 活体走端口探; 服务名==容器名免别名(显存/日志
+            # 活跃度两路默认认领成立); 无 UNITS 条目属预期(同 para-asr 口径)。
+            18090: ("nemotron-transcribe", "asr", "nemotron-3.5·NVFP4"),
         },
         # 容器名≠服务名: 显存按「容器名==服务名」认领, 不加别名则 qwen38-flash 显存恒 0。
         # 10-05 起引擎为 TensorFold; 容器名沿革 vllm-fn-tp1(9-25 vLLM) ->
